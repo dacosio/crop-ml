@@ -16,6 +16,11 @@ warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 CORS(app, origins="http://localhost:3000")
+
+@app.route('/')
+def hello_world():
+    return "Welcome to the backend"
+
 @app.route('/predict-crop', methods=['POST'])
 def recommend_crop():
     # Create a dictionary with the data you want to return as JSON
