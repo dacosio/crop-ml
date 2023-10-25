@@ -25,12 +25,19 @@ def hello_world():
 def recommend_crop():
     # Create a dictionary with the data you want to return as JSON
     data = request.json
-    N = data["N"]
-    P = data["P"]
-    K = data["K"]
+    # NPK is the soil nitrogen, phosphorus and potassium
+    # The input is a whole number but in reality it has to be divided by 10. example: 96 >> 9.6
+    # N = data["N"]
+    # P = data["P"]
+    # K = data["K"]
+    # ph = data["ph"]
+
+    N = 10
+    P = 20
+    K = 15
+    ph = 5.0
     temperature = data["temperature"]
     humidity = data["humidity"]
-    ph = data["ph"]
     rainfall = data["rainfall"]
 
 
@@ -110,11 +117,11 @@ def predict_yield():
 
     #replace this with request data
     data = request.json
-    year = data['year']
+    year = 2013 #use 2013 as year
     average_rain_fall_mm_per_year = data['average_rain_fall_mm_per_year']
     pesticides_tonnes = data['pesticides_tonnes']
     avg_temp = data['avg_temp']                 
-    area = data['area']
+    # area = data['area'] #default to Canada
     item = data['item']
     print(data)
 
@@ -126,7 +133,7 @@ def predict_yield():
     # Make the prediction
     predicted_yield = dtr.predict(transformed_features).reshape(1, -1)
 
-      # Create a dictionary to store the prediction result
+    # Create a dictionary to store the prediction result 
     result_dict = {'predicted_yield': predicted_yield[0][0].tolist()}  # Convert the NumPy array to a Python list
 
     # Serialize the result_dict to JSON
