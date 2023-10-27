@@ -15,7 +15,7 @@ from flask_cors import CORS
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
-CORS(app, origins="http://localhost:3000")
+CORS(app, origins=["http://localhost:3000", "https://project-2-app.vercel.app/"])
 
 @app.route('/')
 def hello_world():
