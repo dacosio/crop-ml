@@ -15,7 +15,7 @@ from flask_cors import CORS
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
-CORS(app, origins="http://localhost:3000")
+CORS(app, origins=["http://localhost:3000", "https://project-2-app.vercel.app/"])
 
 @app.route('/')
 def hello_world():
@@ -27,15 +27,20 @@ def recommend_crop():
     data = request.json
     # NPK is the soil nitrogen, phosphorus and potassium
     # The input is a whole number but in reality it has to be divided by 10. example: 96 >> 9.6
-    # N = data["N"]
-    # P = data["P"]
-    # K = data["K"]
-    # ph = data["ph"]
-
-    N = 10
-    P = 20
-    K = 15
-    ph = 5.0
+    N = data["N"]
+    P = data["P"]
+    K = data["K"]
+    ph = data["ph"]
+    defaults = {
+        'N': 10,
+        'P': 20,
+        'K': 15,
+        'ph': 5.0
+    }
+    N = N if N is not None else defaults['N']
+    P = P if P is not None else defaults['P']
+    K = K if K is not None else defaults['K']
+    ph = ph if ph is not None else defaults['ph']
     temperature = data["temperature"]
     humidity = data["humidity"]
     rainfall = data["rainfall"]
