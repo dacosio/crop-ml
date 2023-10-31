@@ -142,19 +142,18 @@ def predict_yield():
 
     # Create a dictionary to store the prediction result 
     result_dict = {'predicted_yield': predicted_yield[0][0].tolist()}  # Convert the NumPy array to a Python list
-    # Serialize the result_dict to JSON
-    json_result = json.dumps(result_dict)
-    result_dict = json.loads(json_result)
-    # Extract the predicted yield in hg/ha from the dictionary
-    predicted_yield_hg_ha = result_dict["predicted_yield"]
-    print(int(predicted_yield_hg_ha)/ 10000)
-    # # Convert to g/m²
-    # predicted_yield_g_m2 = (predicted_yield_hg_ha / 10,000) * 100
 
-    # print("Predicted yield in g/sqm:", predicted_yield_g_m2)
-    
+    # Extract the predicted yield in hg/ha from the dictionary
+    predicted_yield_hg_ha = result_dict["predicted_yield"] * 0.01
+
+    # Convert to g/m²
+    predicted_yield_gm_sqm =  predicted_yield_hg_ha * 0.01
+
+    # Serialize the result_dict to JSON
+    json_result = json.dumps(predicted_yield_gm_sqm)
+
     # Use jsonify to convert the dictionary to a JSON response
-    return json_result #this is hectogram/hectare
+    return json_result #this is gm/sqm
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
