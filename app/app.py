@@ -123,14 +123,16 @@ def predict_yield():
     #replace this with request data
     data = request.json
     year = 2013 #use 2013 as year
-    average_rain_fall_mm_per_year = data['average_rain_fall_mm_per_year']
-    pesticides_tonnes = data['pesticides_tonnes']
-    avg_temp = data['avg_temp']                 
-    # area = data['area'] #default to Canada
-    item = data['item']
-    print(data)
+    # pesticides_tonnes = data['pesticides_tonnes'] # hard coded with ideal number
+    pesticides_tonnes = 43102.23391  #this is the average active pesticide in Canada from 1990 to 2013 per year on all type of vegetables sample
+    area = "Canada" #default to Canada
 
-    features = np.array([[year, average_rain_fall_mm_per_year, pesticides_tonnes, avg_temp, "Canada", item]], dtype=object)
+
+    item = data['item']
+    average_rain_fall_mm_per_year = data['average_rain_fall_mm_per_year']
+    avg_temp = data['avg_temp']                 
+
+    features = np.array([[year, average_rain_fall_mm_per_year, pesticides_tonnes, avg_temp, area, item]], dtype=object)
 
     # Transform the features using the preprocessor
     transformed_features = preprocesser.transform(features)
@@ -141,12 +143,17 @@ def predict_yield():
     # Create a dictionary to store the prediction result 
     result_dict = {'predicted_yield': predicted_yield[0][0].tolist()}  # Convert the NumPy array to a Python list
 
+    # Extract the predicted yield in hg/ha from the dictionary
+    predicted_yield_hg_ha = result_dict["predicted_yield"] * 0.01
+
+    # Convert to g/m²
+    predicted_yield_gm_sqm =  predicted_yield_hg_ha * 0.01
+
     # Serialize the result_dict to JSON
-    json_result = json.dumps(result_dict)
-    
-    
+    json_result = json.dumps(predicted_yield_gm_sqm)
+
     # Use jsonify to convert the dictionary to a JSON response
-    return json_result #this is hectogram/hectare
+    return json_result #this is gm/sqm
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
