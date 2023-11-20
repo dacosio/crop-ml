@@ -12,16 +12,28 @@ from sklearn.tree import DecisionTreeRegressor
 import json
 import warnings
 from flask_cors import CORS
-warnings.filterwarnings('ignore')
+
+warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000", "https://project-2-app.vercel.app/"])
+CORS(
+    app,
+    origins=[
+        "http://localhost:3000",
+        "https://project-2-app.vercel.app/",
+        "https://www.sproutfarming.net",
+        "https://www.sproutfarming.net/",
+        "https://project-2-api.onrender.com",
+    ],
+)
 
-@app.route('/')
+
+@app.route("/")
 def hello_world():
     return "Welcome to the backend"
 
-@app.route('/predict-crop', methods=['POST'])
+
+@app.route("/predict-crop", methods=["POST"])
 def recommend_crop():
     # Create a dictionary with the data you want to return as JSON
     data = request.json
@@ -31,54 +43,52 @@ def recommend_crop():
     P = data["P"]
     K = data["K"]
     ph = data["ph"]
-    defaults = {
-        'N': 10,
-        'P': 20,
-        'K': 15,
-        'ph': 5.0
-    }
-    N = N if N is not None else defaults['N']
-    P = P if P is not None else defaults['P']
-    K = K if K is not None else defaults['K']
-    ph = ph if ph is not None else defaults['ph']
+    defaults = {"N": 10, "P": 20, "K": 15, "ph": 5.0}
+    N = N if N is not None else defaults["N"]
+    P = P if P is not None else defaults["P"]
+    K = K if K is not None else defaults["K"]
+    ph = ph if ph is not None else defaults["ph"]
     temperature = data["temperature"]
     humidity = data["humidity"]
     rainfall = data["rainfall"]
 
-
-    PATH = './Crop_recommendation.csv'
-    crop  = pd.read_csv(PATH)
-    features = crop[['N', 'P','K','temperature', 'humidity', 'ph', 'rainfall']]
-    target = crop['label']
+    PATH = "./Crop_recommendation.csv"
+    crop = pd.read_csv(PATH)
+    features = crop[["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]]
+    target = crop["label"]
 
     # Splitting into train and test data
-    Xtrain, Xtest, Ytrain, Ytest = train_test_split(features,target,test_size = 0.2,random_state =2)
+    Xtrain, Xtest, Ytrain, Ytest = train_test_split(
+        features, target, test_size=0.2, random_state=2
+    )
 
     RF = RandomForestClassifier(n_estimators=20, random_state=0)
-    RF.fit(Xtrain,Ytrain)
+    RF.fit(Xtrain, Ytrain)
 
     predicted_values = RF.predict(Xtest)
 
     x = metrics.accuracy_score(Ytest, predicted_values)
 
     # these are the expected input [['N', 'P','K','temperature', 'humidity', 'ph', 'rainfall']]
-    input_data = np.array([[N,P,K,temperature,humidity,ph,rainfall]])
+    input_data = np.array([[N, P, K, temperature, humidity, ph, rainfall]])
     prediction = RF.predict(input_data)
 
     # Create a dictionary to store the prediction result
-    result_dict = {'prediction': prediction.tolist()}  # Convert the NumPy array to a Python list
+    result_dict = {
+        "prediction": prediction.tolist()
+    }  # Convert the NumPy array to a Python list
 
     # Serialize the result_dict to JSON
     json_result = json.dumps(result_dict)
-    
-    
+
     # Use jsonify to convert the dictionary to a JSON response
     return json_result
 
-@app.route('/predict-yield', methods=['POST'])
+
+@app.route("/predict-yield", methods=["POST"])
 def predict_yield():
-    df = pd.read_csv('./yield_df.csv')
-    df.drop('Unnamed: 0',axis=1,inplace=True)
+    df = pd.read_csv("./yield_df.csv")
+    df.drop("Unnamed: 0", axis=1, inplace=True)
 
     def isStr(obj):
         try:
@@ -86,53 +96,78 @@ def predict_yield():
             return False
         except:
             return True
-        
-    to_drop = df[df['average_rain_fall_mm_per_year'].apply(isStr)].index
+
+    to_drop = df[df["average_rain_fall_mm_per_year"].apply(isStr)].index
 
     df = df.drop(to_drop)
-    df['average_rain_fall_mm_per_year'] = df['average_rain_fall_mm_per_year'].astype(np.float64)
-    crops = df['Item'].unique()
+    df["average_rain_fall_mm_per_year"] = df["average_rain_fall_mm_per_year"].astype(
+        np.float64
+    )
+    crops = df["Item"].unique()
     yield_per_crop = []
     for crop in crops:
-        yield_per_crop.append(df[df['Item']==crop]['hg/ha_yield'].sum()) #Train Test split Rearranging Columns
+        yield_per_crop.append(
+            df[df["Item"] == crop]["hg/ha_yield"].sum()
+        )  # Train Test split Rearranging Columns
 
-    col = ['Year', 'average_rain_fall_mm_per_year','pesticides_tonnes', 'avg_temp', 'Area', 'Item', 'hg/ha_yield']
+    col = [
+        "Year",
+        "average_rain_fall_mm_per_year",
+        "pesticides_tonnes",
+        "avg_temp",
+        "Area",
+        "Item",
+        "hg/ha_yield",
+    ]
     df = df[col]
     X = df.iloc[:, :-1]
     y = df.iloc[:, -1]
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=0.8, random_state=0, shuffle=True)
-    ohe = OneHotEncoder(drop='first')
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, train_size=0.8, random_state=0, shuffle=True
+    )
+    ohe = OneHotEncoder(drop="first")
     scale = StandardScaler()
 
     preprocesser = ColumnTransformer(
-            transformers = [
-                ('StandardScale', scale, [0, 1, 2, 3]),
-                ('OHE', ohe, [4, 5]),
-            ],
-            remainder='passthrough'
+        transformers=[
+            ("StandardScale", scale, [0, 1, 2, 3]),
+            ("OHE", ohe, [4, 5]),
+        ],
+        remainder="passthrough",
     )
     X_train_dummy = preprocesser.fit_transform(X_train)
     X_test_dummy = preprocesser.transform(X_test)
     preprocesser.get_feature_names_out(col[:-1])
 
     dtr = DecisionTreeRegressor()
-    dtr.fit(X_train_dummy,y_train)
+    dtr.fit(X_train_dummy, y_train)
     dtr.predict(X_test_dummy)
 
-    #replace this with request data
+    # replace this with request data
     data = request.json
-    year = 2013 #use 2013 as year
+    year = 2013  # use 2013 as year
     # pesticides_tonnes = data['pesticides_tonnes'] # hard coded with ideal number
-    pesticides_tonnes = 43102.23391  #this is the average active pesticide in Canada from 1990 to 2013 per year on all type of vegetables sample
-    area = "Canada" #default to Canada
+    pesticides_tonnes = 43102.23391  # this is the average active pesticide in Canada from 1990 to 2013 per year on all type of vegetables sample
+    area = "Canada"  # default to Canada
 
+    item = data["item"]
+    average_rain_fall_mm_per_year = data["average_rain_fall_mm_per_year"]
+    avg_temp = data["avg_temp"]
 
-    item = data['item']
-    average_rain_fall_mm_per_year = data['average_rain_fall_mm_per_year']
-    avg_temp = data['avg_temp']                 
-
-    features = np.array([[year, average_rain_fall_mm_per_year, pesticides_tonnes, avg_temp, area, item]], dtype=object)
+    features = np.array(
+        [
+            [
+                year,
+                average_rain_fall_mm_per_year,
+                pesticides_tonnes,
+                avg_temp,
+                area,
+                item,
+            ]
+        ],
+        dtype=object,
+    )
 
     # Transform the features using the preprocessor
     transformed_features = preprocesser.transform(features)
@@ -140,20 +175,23 @@ def predict_yield():
     # Make the prediction
     predicted_yield = dtr.predict(transformed_features).reshape(1, -1)
 
-    # Create a dictionary to store the prediction result 
-    result_dict = {'predicted_yield': predicted_yield[0][0].tolist()}  # Convert the NumPy array to a Python list
+    # Create a dictionary to store the prediction result
+    result_dict = {
+        "predicted_yield": predicted_yield[0][0].tolist()
+    }  # Convert the NumPy array to a Python list
 
     # Extract the predicted yield in hg/ha from the dictionary
     predicted_yield_hg_ha = result_dict["predicted_yield"] * 0.01
 
     # Convert to g/m²
-    predicted_yield_gm_sqm =  predicted_yield_hg_ha * 0.01
+    predicted_yield_gm_sqm = predicted_yield_hg_ha * 0.01
 
     # Serialize the result_dict to JSON
     json_result = json.dumps(predicted_yield_gm_sqm)
 
     # Use jsonify to convert the dictionary to a JSON response
-    return json_result #this is gm/sqm
+    return json_result  # this is gm/sqm
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(debug=True, port=5000)
